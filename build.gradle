@@ -1,15 +1,6 @@
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies {
-    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.8'
-  }
-}
-
 plugins {
     // Apply the scala plugin to add support for Scala
-    id 'com.google.protobuf' version '0.8.8'
+    id 'com.google.protobuf' version '0.8.16'
     id 'scala'
 }
 
@@ -18,7 +9,7 @@ ext {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
@@ -31,7 +22,7 @@ dependencies {
 
     // Need scala-xml at test runtime
     testRuntimeOnly 'org.scala-lang.modules:scala-xml_2.12:1.1.1'
-    compile "com.thesamet.scalapb:scalapb-runtime_2.12:${scalapbVersion}"
+    implementation "com.thesamet.scalapb:scalapb-runtime_2.12:${scalapbVersion}"
 }
 
 protobuf {
@@ -48,9 +39,6 @@ protobuf {
 
   generateProtoTasks {
     all().each { task ->
-      task.builtins {
-          remove java
-      }
       task.plugins {
           scalapb {
             // add any ScalaPB generator options here. See: https://scalapb.github.io/scalapbc.html#passing-generator-parameters
@@ -64,13 +52,15 @@ protobuf {
 task run(type: JavaExec, dependsOn: classes) {
     main = 'scalapb.demo.Demo'
     classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
 }
 
 // Add geneated Scala code as a source directory
 sourceSets {
   main {
     scala {
+        // Adding generated Scala code to scala source set is needed, as the
+        // protobuf plugin won't add non-Java/Kotlin code to compilation tasks.
+        // See https://github.com/google/protobuf-gradle-plugin/pull/375
         srcDirs "${protobuf.generatedFilesBaseDir}/main/scalapb"
     }
   }
